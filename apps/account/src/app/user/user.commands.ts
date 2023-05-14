@@ -1,30 +1,37 @@
 import { Body, Controller } from '@nestjs/common';
 import { RMQRoute, RMQValidate } from 'nestjs-rmq';
-import { AccountChangeProfile } from '@purple/contracts';
-import { UserRepository } from './repositories/user.repository';
-import { UserEntity } from './entities/user.entity';
+import {
+  AccountBuyCourse,
+  AccountChangeProfile,
+  AccountCheckPayment,
+} from '@purple/contracts';
+import { UserService } from './user.service';
 
 @Controller()
 export class UserCommands {
-  constructor(private userRepository: UserRepository) {}
+  constructor(private userService: UserService) {}
 
   @RMQValidate()
   @RMQRoute(AccountChangeProfile.topic)
   async changeProfile(
     @Body() { user, id }: AccountChangeProfile.Request
   ): Promise<AccountChangeProfile.Response> {
-    const existedUser = await this.userRepository.findUserById(id);
+    return this.userService.changeProfile(user, id);
+  }
 
-    if (!existedUser) {
-      throw new Error('Such user not found');
-    }
+  @RMQValidate()
+  @RMQRoute(AccountBuyCourse.topic)
+  async buyCourse(
+    @Body() { userId, courseId }: AccountBuyCourse.Request
+  ): Promise<AccountBuyCourse.Response> {
+    return this.userService.buyCourse(userId, courseId);
+  }
 
-    const userEntity = new UserEntity(existedUser).updateProfile(
-      user.displayName
-    );
-
-    await this.userRepository.updateUser(userEntity);
-
-    return {};
+  @RMQValidate()
+  @RMQRoute(AccountCheckPayment.topic)
+  async checkPayment(
+    @Body() { userId, courseId }: AccountCheckPayment.Request
+  ): Promise<AccountCheckPayment.Response> {
+    return this.userService.checkPayment(userId, courseId);
   }
 }
